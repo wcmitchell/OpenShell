@@ -14,12 +14,11 @@
 # an artifact, which is downloaded into the same staging directory before the
 # image build job runs.
 #
-# The runtime is distroless Debian 13, which provides glibc and the dynamic
-# loader needed by the GNU-linked gateway binary while keeping the attack
-# surface small. The default digest currently carries Debian glibc
-# 2.41-12+deb13u3.
+# The runtime is a Red Hat hardened core-runtime image, which provides glibc
+# and the dynamic loader needed by the GNU-linked gateway binary while
+# maintaining a minimal attack surface with Red Hat's security hardening.
 
-ARG GATEWAY_BASE_IMAGE=gcr.io/distroless/cc-debian13:nonroot@sha256:e1fd250ce83d94603e9887ec991156a6c26905a6b0001039b7a43699018c0733
+ARG GATEWAY_BASE_IMAGE=registry.access.redhat.com/hi/core-runtime:latest
 
 FROM ${GATEWAY_BASE_IMAGE} AS gateway
 

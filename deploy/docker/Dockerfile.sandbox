@@ -1,0 +1,33 @@
+# =====================================================================
+# STAGE 1: The Builder (Standard UBI to resolve binaries)
+# =====================================================================
+FROM registry.access.redhat.com/ubi9/ubi:latest AS builder
+
+# Install required node/npm stack to resolve the agent harness
+RUN dnf module enable -y nodejs:20 && \
+    dnf install -y git nodejs npm && \
+    dnf clean all
+
+WORKDIR /build
+
+# Install the verified, open-source OpenCode CLI agent harness package globally
+RUN npm install -g @opencode/cli --prefix /build/output
+
+# =====================================================================
+# STAGE 2: The Hardened Runtime (The Secure Sandbox Payload)
+# =====================================================================
+# Pull the pristine, zero-CVE runtime from images.redhat.com
+FROM images.redhat.com/rhoai/hardened-nodejs-runtime:latest
+
+# Copy the compiled agent harness from the builder stage
+COPY --from=builder /build/output /usr/local
+
+# Explicitly copy over just the binary dependencies the agent needs to touch code
+COPY --from=builder /usr/bin/git /usr/bin/git
+COPY --from=builder /usr/libexec/git-core /usr/libexec/git-core
+
+WORKDIR /workspace
+USER 1001
+
+# The execution environment boots headless worker mode when OpenShell wakes it up
+ENTRYPOINT ["/usr/local/bin/opencode", "--mode", "worker"]
